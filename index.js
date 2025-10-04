@@ -10,6 +10,8 @@ const DB_CONNECTION_STRING = process.env.DB_CONNECTION_STRING;
 const UserRoute = require('./routes/UserRoute');
 const UserController = require('./controllers/UserController');
 const CampRoute = require('./routes/CampRoute');
+const BloodInventoryRoute = require('./routes/BloodInventoryRoute');
+const CampRegistrationRoute = require('./routes/CampRegistrationRoute');
 
 const app = express();
 
@@ -42,6 +44,8 @@ mongoose.connect(DB_CONNECTION_STRING)
 
 app.use('/api/v1/users', UserRoute);
 app.use('/api/v1/camps', CampRoute);
+app.use('/api/v1/blood-inventory', BloodInventoryRoute);
+app.use('/api/v1/camp-registrations', CampRegistrationRoute);
 
 
 
