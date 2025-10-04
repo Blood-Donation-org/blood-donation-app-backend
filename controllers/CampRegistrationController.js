@@ -82,4 +82,22 @@ const getAllRegistrations = async (req, res) => {
     }
 };
 
-module.exports = { registerForACamp, getByUser, getAllRegistrations };
+// Check if a user is registered for a camp
+const checkUserRegistration = async (req, res) => {
+    try {
+        const { userId, campId } = req.query;
+        if (!userId || !campId) {
+            return res.status(400).json({ message: 'userId and campId are required', statusCode: 400 });
+        }
+        const registration = await CampRegistration.findOne({ userId, campId });
+        if (registration) {
+            return res.status(200).json({ registered: true, registrationId: registration._id, statusCode: 200 });
+        } else {
+            return res.status(200).json({ registered: false, statusCode: 200 });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
+    }
+};
+
+module.exports = { registerForACamp, getByUser, getAllRegistrations, checkUserRegistration };
