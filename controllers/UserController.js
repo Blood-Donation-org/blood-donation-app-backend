@@ -235,4 +235,98 @@ const updateUser = async (req, res) => {
     }
 };
 
-module.exports = { register, login, initializeAdmin, updateUser };
+// Get all users
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find();
+        res.status(200).json({
+            message: 'All users retrieved successfully',
+            users: users.map(user => ({
+                id: user._id,
+                email: user.email,
+                role: user.role,
+                fullName: user.fullName,
+                phoneNumber: user.phoneNumber,
+                dob: user.dob,
+                bloodType: user.bloodType,
+                address: user.address,
+                medicalHistory: user.medicalHistory,
+                isDoner: user.isDoner,
+                isPatient: user.isPatient,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            })),
+            count: users.length,
+            statusCode: 200
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
+    }
+};
+
+// Get users by role
+const getByUserRole = async (req, res) => {
+    try {
+        const { role } = req.params;
+        if (!role) {
+            return res.status(400).json({ message: 'role is required', statusCode: 400 });
+        }
+        const users = await User.find({ role });
+        res.status(200).json({
+            message: 'Users by role retrieved successfully',
+            users: users.map(user => ({
+                id: user._id,
+                email: user.email,
+                role: user.role,
+                fullName: user.fullName,
+                phoneNumber: user.phoneNumber,
+                dob: user.dob,
+                bloodType: user.bloodType,
+                address: user.address,
+                medicalHistory: user.medicalHistory,
+                isDoner: user.isDoner,
+                isPatient: user.isPatient,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            })),
+            count: users.length,
+            statusCode: 200
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
+    }
+};
+
+// Get user by ID
+const getUserById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found', statusCode: 404 });
+        }
+        res.status(200).json({
+            message: 'User retrieved successfully',
+            user: {
+                id: user._id,
+                email: user.email,
+                role: user.role,
+                fullName: user.fullName,
+                phoneNumber: user.phoneNumber,
+                dob: user.dob,
+                bloodType: user.bloodType,
+                address: user.address,
+                medicalHistory: user.medicalHistory,
+                isDoner: user.isDoner,
+                isPatient: user.isPatient,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            },
+            statusCode: 200
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
+    }
+};
+
+module.exports = { register, login, initializeAdmin, updateUser, getAllUsers, getByUserRole, getUserById };
