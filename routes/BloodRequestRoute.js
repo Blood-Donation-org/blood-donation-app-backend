@@ -9,7 +9,8 @@ const {
     updateBloodRequest,
     deleteBloodRequest,
     updateBloodRequestStatus,
-    updateBloodRequestConfirmationStatus
+    updateBloodRequestConfirmationStatus,
+    getAllBloodRequestsByUser
 } = require('../controllers/BloodRequestController');
 
 
@@ -19,6 +20,7 @@ router.patch('/update-status/:id', updateBloodRequestStatus);
 router.patch('/update-confirmation/:id', updateBloodRequestConfirmationStatus);
 router.delete('/delete/:id', deleteBloodRequest);
 router.get('/get-all', getAllBloodRequests);
+router.get('/get-by-user/:userId', getAllBloodRequestsByUser);
 router.get('/:id', getBloodRequestById);
 
 module.exports = router;

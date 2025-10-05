@@ -1,3 +1,40 @@
+// Get all blood requests by user
+const getAllBloodRequestsByUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) {
+            return res.status(400).json({ message: 'userId is required', statusCode: 400 });
+        }
+        const requests = await BloodRequest.find({ user: userId }).populate('user');
+        res.status(200).json({
+            message: 'Blood requests for user retrieved successfully',
+            bloodRequests: requests.map(request => ({
+                id: request._id,
+                patientName: request.patientName,
+                age: request.age,
+                gender: request.gender,
+                bloodType: request.bloodType,
+                unitsRequired: request.unitsRequired,
+                urgencyLevel: request.urgencyLevel,
+                wardNumber: request.wardNumber,
+                contactNumber: request.contactNumber,
+                medicalCondition: request.medicalCondition,
+                surgeryDate: request.surgeryDate,
+                additionalNotes: request.additionalNotes,
+                dtFormUpload: request.dtFormUpload,
+                status: request.status,
+                confirmationStatus: request.confirmationStatus,
+                user: request.user,
+                createdAt: request.createdAt,
+                updatedAt: request.updatedAt
+            })),
+            count: requests.length,
+            statusCode: 200
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
+    }
+};
 
 const BloodRequest = require('../schemas/BloodRequestSchema');
 const { validationResult } = require('express-validator');
@@ -22,7 +59,8 @@ const createBloodRequest = async (req, res) => {
             surgeryDate,
             additionalNotes,
             status = 'pending',
-            confirmationStatus = 'unconfirmed'
+            confirmationStatus = 'unconfirmed',
+            user
         } = req.body;
         let dtFormUpload = '';
         if (req.file) {
@@ -42,9 +80,11 @@ const createBloodRequest = async (req, res) => {
             additionalNotes,
             dtFormUpload,
             status,
-            confirmationStatus
+            confirmationStatus,
+            user
         });
         await bloodRequest.save();
+        await bloodRequest.populate('user');
         res.status(201).json({
             message: 'Blood request created successfully',
             bloodRequest: {
@@ -63,6 +103,7 @@ const createBloodRequest = async (req, res) => {
                 dtFormUpload: bloodRequest.dtFormUpload,
                 status: bloodRequest.status,
                 confirmationStatus: bloodRequest.confirmationStatus,
+                user: bloodRequest.user,
                 createdAt: bloodRequest.createdAt,
                 updatedAt: bloodRequest.updatedAt
             },
@@ -76,7 +117,7 @@ const createBloodRequest = async (req, res) => {
 // Get all blood requests
 const getAllBloodRequests = async (req, res) => {
     try {
-        const requests = await BloodRequest.find();
+        const requests = await BloodRequest.find().populate('user');
         res.status(200).json({
             message: 'All blood requests retrieved successfully',
             bloodRequests: requests.map(request => ({
@@ -95,6 +136,7 @@ const getAllBloodRequests = async (req, res) => {
                 dtFormUpload: request.dtFormUpload,
                 status: request.status,
                 confirmationStatus: request.confirmationStatus,
+                user: request.user,
                 createdAt: request.createdAt,
                 updatedAt: request.updatedAt
             })),
@@ -110,7 +152,7 @@ const getAllBloodRequests = async (req, res) => {
 const getBloodRequestById = async (req, res) => {
     try {
         const { id } = req.params;
-        const request = await BloodRequest.findById(id);
+        const request = await BloodRequest.findById(id).populate('user');
         if (!request) {
             return res.status(404).json({ message: 'Blood request not found', statusCode: 404 });
         }
@@ -132,6 +174,7 @@ const getBloodRequestById = async (req, res) => {
                 dtFormUpload: request.dtFormUpload,
                 status: request.status,
                 confirmationStatus: request.confirmationStatus,
+                user: request.user,
                 createdAt: request.createdAt,
                 updatedAt: request.updatedAt
             },
@@ -150,7 +193,7 @@ const updateBloodRequest = async (req, res) => {
         const allowedFields = [
             'patientName', 'age', 'gender', 'bloodType', 'unitsRequired', 'urgencyLevel',
             'wardNumber', 'contactNumber', 'medicalCondition', 'surgeryDate', 'additionalNotes',
-            'dtFormUpload', 'status', 'confirmationStatus'
+            'dtFormUpload', 'status', 'confirmationStatus', 'user'
         ];
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {
@@ -160,7 +203,7 @@ const updateBloodRequest = async (req, res) => {
         if (req.file) {
             updateFields.dtFormUpload = req.file.path;
         }
-        const updatedRequest = await BloodRequest.findByIdAndUpdate(id, updateFields, { new: true });
+        const updatedRequest = await BloodRequest.findByIdAndUpdate(id, updateFields, { new: true }).populate('user');
         if (!updatedRequest) {
             return res.status(404).json({ message: 'Blood request not found', statusCode: 404 });
         }
@@ -182,6 +225,7 @@ const updateBloodRequest = async (req, res) => {
                 dtFormUpload: updatedRequest.dtFormUpload,
                 status: updatedRequest.status,
                 confirmationStatus: updatedRequest.confirmationStatus,
+                user: updatedRequest.user,
                 createdAt: updatedRequest.createdAt,
                 updatedAt: updatedRequest.updatedAt
             },
@@ -218,7 +262,7 @@ const updateBloodRequestStatus = async (req, res) => {
         if (!status) {
             return res.status(400).json({ message: 'Status is required', statusCode: 400 });
         }
-        const updatedRequest = await BloodRequest.findByIdAndUpdate(id, { status }, { new: true });
+        const updatedRequest = await BloodRequest.findByIdAndUpdate(id, { status }, { new: true }).populate('user');
         if (!updatedRequest) {
             return res.status(404).json({ message: 'Blood request not found', statusCode: 404 });
         }
@@ -228,6 +272,7 @@ const updateBloodRequestStatus = async (req, res) => {
                 id: updatedRequest._id,
                 status: updatedRequest.status,
                 confirmationStatus: updatedRequest.confirmationStatus,
+                user: updatedRequest.user,
                 updatedAt: updatedRequest.updatedAt
             },
             statusCode: 200
@@ -245,7 +290,7 @@ const updateBloodRequestConfirmationStatus = async (req, res) => {
         if (!confirmationStatus) {
             return res.status(400).json({ message: 'Confirmation status is required', statusCode: 400 });
         }
-        const updatedRequest = await BloodRequest.findByIdAndUpdate(id, { confirmationStatus }, { new: true });
+        const updatedRequest = await BloodRequest.findByIdAndUpdate(id, { confirmationStatus }, { new: true }).populate('user');
         if (!updatedRequest) {
             return res.status(404).json({ message: 'Blood request not found', statusCode: 404 });
         }
@@ -255,6 +300,7 @@ const updateBloodRequestConfirmationStatus = async (req, res) => {
                 id: updatedRequest._id,
                 status: updatedRequest.status,
                 confirmationStatus: updatedRequest.confirmationStatus,
+                user: updatedRequest.user,
                 updatedAt: updatedRequest.updatedAt
             },
             statusCode: 200
@@ -271,5 +317,6 @@ module.exports = {
     updateBloodRequest,
     deleteBloodRequest,
     updateBloodRequestStatus,
-    updateBloodRequestConfirmationStatus
+    updateBloodRequestConfirmationStatus,
+    getAllBloodRequestsByUser
 };

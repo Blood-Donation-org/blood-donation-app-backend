@@ -14,7 +14,8 @@ const BloodRequestSchema = new mongoose.Schema({
     additionalNotes: { type: String },
     dtFormUpload: { type: String }, 
     status: { type: String, default: 'pending' },
-    confirmationStatus: { type: String, default: 'unconfirmed' }
+    confirmationStatus: { type: String, default: 'unconfirmed' },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('BloodRequests', BloodRequestSchema);
