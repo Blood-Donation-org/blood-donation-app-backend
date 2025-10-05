@@ -1,7 +1,7 @@
 const BloodInventory = require('../schemas/BloodInventorySchema');
 const { validationResult } = require('express-validator');
 
-// Create a new blood inventory entry
+// Create a new blood inventory entry or update units if bloodType exists
 const createBloodInventory = async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -19,34 +19,61 @@ const createBloodInventory = async (req, res) => {
             Notes = ''
         } = req.body;
 
-        const bloodInventory = new BloodInventory({
-            bloodType,
-            units,
-            donerName,
-            donerphone,
-            donerAge,
-            donationDate,
-            Notes
-        });
+        // Check if bloodType already exists
+        let bloodInventory = await BloodInventory.findOne({ bloodType });
 
-        await bloodInventory.save();
+        if (bloodInventory) {
+            // If exists, increase units
+            bloodInventory.units += units;
+            await bloodInventory.save();
 
-        res.status(201).json({
-            message: 'Blood inventory entry created successfully',
-            bloodInventory: {
-                id: bloodInventory._id,
-                bloodType: bloodInventory.bloodType,
-                units: bloodInventory.units,
-                donerName: bloodInventory.donerName,
-                donerphone: bloodInventory.donerphone,
-                donerAge: bloodInventory.donerAge,
-                donationDate: bloodInventory.donationDate,
-                Notes: bloodInventory.Notes,
-                createdAt: bloodInventory.createdAt,
-                updatedAt: bloodInventory.updatedAt
-            },
-            statusCode: 201
-        });
+            return res.status(200).json({
+                message: 'Blood units updated for existing blood type',
+                bloodInventory: {
+                    id: bloodInventory._id,
+                    bloodType: bloodInventory.bloodType,
+                    units: bloodInventory.units,
+                    donerName: bloodInventory.donerName,
+                    donerphone: bloodInventory.donerphone,
+                    donerAge: bloodInventory.donerAge,
+                    donationDate: bloodInventory.donationDate,
+                    Notes: bloodInventory.Notes,
+                    createdAt: bloodInventory.createdAt,
+                    updatedAt: bloodInventory.updatedAt
+                },
+                statusCode: 200
+            });
+        } else {
+            // If not exists, create new entry
+            bloodInventory = new BloodInventory({
+                bloodType,
+                units,
+                donerName,
+                donerphone,
+                donerAge,
+                donationDate,
+                Notes
+            });
+
+            await bloodInventory.save();
+
+            return res.status(201).json({
+                message: 'Blood inventory entry created successfully',
+                bloodInventory: {
+                    id: bloodInventory._id,
+                    bloodType: bloodInventory.bloodType,
+                    units: bloodInventory.units,
+                    donerName: bloodInventory.donerName,
+                    donerphone: bloodInventory.donerphone,
+                    donerAge: bloodInventory.donerAge,
+                    donationDate: bloodInventory.donationDate,
+                    Notes: bloodInventory.Notes,
+                    createdAt: bloodInventory.createdAt,
+                    updatedAt: bloodInventory.updatedAt
+                },
+                statusCode: 201
+            });
+        }
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
     }
