@@ -38,6 +38,7 @@ const getAllBloodRequestsByUser = async (req, res) => {
 
 const BloodRequest = require('../schemas/BloodRequestSchema');
 const { validationResult } = require('express-validator');
+const Notification = require('../schemas/NotificationSchema');
 
 // Create a new blood request
 const createBloodRequest = async (req, res) => {
@@ -85,6 +86,15 @@ const createBloodRequest = async (req, res) => {
         });
         await bloodRequest.save();
         await bloodRequest.populate('user');
+        // Create notification for new blood request
+        const notification = new Notification({
+            user: bloodRequest.user._id,
+            type: 'blood-request',
+            message: `New blood request created for patient ${bloodRequest.patientName}`,
+            relatedRequest: bloodRequest._id,
+            status: 'unread'
+        });
+        await notification.save();
         res.status(201).json({
             message: 'Blood request created successfully',
             bloodRequest: {

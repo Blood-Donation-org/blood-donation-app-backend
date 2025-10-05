@@ -15,6 +15,7 @@ const CampRegistrationRoute = require('./routes/CampRegistrationRoute');
 const BloodIssueRoute = require('./routes/BloodIssueRoute');
 const DoctorProfileRoute = require('./routes/DoctorProfileRoute');
 const BloodRequestRoute = require('./routes/BloodRequestRoute');
+const NotificationRoute = require('./routes/NotificationRoute');
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use('/api/v1/camp-registrations', CampRegistrationRoute);
 app.use('/api/v1/blood-issues', BloodIssueRoute);
 app.use('/api/v1/doctor-profiles', DoctorProfileRoute);
 app.use('/api/v1/blood-requests', BloodRequestRoute);
+app.use('/api/v1/notifications', NotificationRoute);
 
 
 
