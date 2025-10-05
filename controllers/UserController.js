@@ -329,4 +329,42 @@ const getUserById = async (req, res) => {
     }
 };
 
-module.exports = { register, login, initializeAdmin, updateUser, getAllUsers, getByUserRole, getUserById };
+const changePassword = async (req, res) => {
+    try {
+        const { id } = req.params; // logged-in user's id
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({ message: 'All fields are required', statusCode: 400 });
+        }
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'New password must be at least 6 characters', statusCode: 400 });
+        }
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: 'New passwords do not match', statusCode: 400 });
+        }
+        if (currentPassword === newPassword) {
+            return res.status(400).json({ message: 'New password must be different from current password', statusCode: 400 });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found', statusCode: 404 });
+        }
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Current password is incorrect', statusCode: 400 });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+        user.password = hashedPassword;
+        user.confirmPassword = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: 'Password changed successfully', statusCode: 200 });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
+    }
+};
+module.exports = { register, login, initializeAdmin, updateUser, getAllUsers, getByUserRole, getUserById, changePassword };

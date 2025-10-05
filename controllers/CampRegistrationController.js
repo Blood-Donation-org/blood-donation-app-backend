@@ -20,6 +20,28 @@ const registerForACamp = async (req, res) => {
         }
         const registration = new CampRegistration({ userId, campId });
         await registration.save();
+
+        // Calculate next donation date (4 months after camp start date)
+        let campDate = camp.date;
+        // If camp.date is a string, convert to Date
+        if (typeof campDate === 'string') {
+            campDate = new Date(campDate);
+        }
+        const nextDonationDate = new Date(campDate);
+        nextDonationDate.setMonth(nextDonationDate.getMonth() + 4);
+
+        // Create notification for next donation date
+        const Notification = require('../schemas/NotificationSchema');
+        const notification = new Notification({
+            user: userId,
+            type: 'donation_reminder',
+            message: `You are eligible to donate blood again on ${nextDonationDate.toLocaleDateString()}`,
+            status: 'unread',
+            // Optionally store nextDonationDate in notification if schema is extended
+            nextDonationDate
+        });
+        await notification.save();
+
         res.status(201).json({
             message: 'User registered for camp successfully',
             registration: {
