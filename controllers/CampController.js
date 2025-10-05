@@ -1,6 +1,5 @@
 const Camp = require('../schemas/CampSchema');
 const { validationResult } = require('express-validator');
-
 // Create a new camp
 const createCamp = async (req, res) => {
     try {
