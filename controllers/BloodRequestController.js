@@ -65,7 +65,16 @@ const createBloodRequest = async (req, res) => {
         } = req.body;
         let dtFormUpload = '';
         if (req.file) {
-            dtFormUpload = req.file.path;
+            // Save relative path for frontend access
+            dtFormUpload = req.file.filename;
+            console.log('File uploaded successfully:', {
+                originalname: req.file.originalname,
+                filename: req.file.filename,
+                path: req.file.path,
+                size: req.file.size
+            });
+        } else {
+            console.log('No file uploaded in request');
         }
         const bloodRequest = new BloodRequest({
             patientName,
@@ -211,7 +220,7 @@ const updateBloodRequest = async (req, res) => {
             }
         }
         if (req.file) {
-            updateFields.dtFormUpload = req.file.path;
+            updateFields.dtFormUpload = req.file.filename;
         }
         const updatedRequest = await BloodRequest.findByIdAndUpdate(id, updateFields, { new: true }).populate('user');
         if (!updatedRequest) {
@@ -320,6 +329,82 @@ const updateBloodRequestConfirmationStatus = async (req, res) => {
     }
 };
 
+// Download dtForm file
+const downloadDtForm = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const request = await BloodRequest.findById(id);
+        
+        if (!request) {
+            return res.status(404).json({ message: 'Blood request not found', statusCode: 404 });
+        }
+        
+        if (!request.dtFormUpload) {
+            return res.status(404).json({ message: 'No file uploaded for this request', statusCode: 404 });
+        }
+        
+        const path = require('path');
+        const fs = require('fs');
+        const filePath = path.join(__dirname, '..', 'uploads', request.dtFormUpload);
+        
+        // Check if file exists
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ message: 'File not found on server', statusCode: 404 });
+        }
+        
+        // Get file stats for proper headers
+        const stats = fs.statSync(filePath);
+        const fileExtension = path.extname(request.dtFormUpload).toLowerCase();
+        
+        // Set appropriate content type based on file extension
+        let contentType = 'application/octet-stream';
+        switch (fileExtension) {
+            case '.pdf':
+                contentType = 'application/pdf';
+                break;
+            case '.doc':
+                contentType = 'application/msword';
+                break;
+            case '.docx':
+                contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                break;
+            case '.txt':
+                contentType = 'text/plain';
+                break;
+            case '.jpg':
+            case '.jpeg':
+                contentType = 'image/jpeg';
+                break;
+            case '.png':
+                contentType = 'image/png';
+                break;
+            case '.gif':
+                contentType = 'image/gif';
+                break;
+        }
+        
+        // Set headers for file download
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Length', stats.size);
+        res.setHeader('Content-Disposition', `attachment; filename="${request.patientName}_dtForm${fileExtension}"`);
+        
+        // Stream the file
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+        
+        fileStream.on('error', (error) => {
+            console.error('Error streaming file:', error);
+            if (!res.headersSent) {
+                res.status(500).json({ message: 'Error downloading file', error: error.message, statusCode: 500 });
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error in downloadDtForm:', error);
+        res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
+    }
+};
+
 module.exports = {
     createBloodRequest,
     getAllBloodRequests,
@@ -328,5 +413,6 @@ module.exports = {
     deleteBloodRequest,
     updateBloodRequestStatus,
     updateBloodRequestConfirmationStatus,
-    getAllBloodRequestsByUser
+    getAllBloodRequestsByUser,
+    downloadDtForm
 };
