@@ -13,12 +13,19 @@ const CampRoute = require('./routes/CampRoute');
 const BloodInventoryRoute = require('./routes/BloodInventoryRoute');
 const CampRegistrationRoute = require('./routes/CampRegistrationRoute');
 const BloodIssueRoute = require('./routes/BloodIssueRoute');
+const DoctorProfileRoute = require('./routes/DoctorProfileRoute');
+const BloodRequestRoute = require('./routes/BloodRequestRoute');
+const NotificationRoute = require('./routes/NotificationRoute');
 
 const app = express();
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(cors());
+
+// Serve static files from uploads directory
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 
@@ -48,6 +55,9 @@ app.use('/api/v1/camps', CampRoute);
 app.use('/api/v1/blood-inventory', BloodInventoryRoute);
 app.use('/api/v1/camp-registrations', CampRegistrationRoute);
 app.use('/api/v1/blood-issues', BloodIssueRoute);
+app.use('/api/v1/doctor-profiles', DoctorProfileRoute);
+app.use('/api/v1/blood-requests', BloodRequestRoute);
+app.use('/api/v1/notifications', NotificationRoute);
 
 
 
