@@ -137,6 +137,16 @@ const createBloodRequest = async (req, res) => {
 const getAllBloodRequests = async (req, res) => {
     try {
         const requests = await BloodRequest.find().populate('user');
+        const DoctorProfile = require('../schemas/DoctorProfileSchema');
+        // Fetch doctor profiles for all users in requests
+        const userIds = requests.map(r => r.user?._id).filter(Boolean);
+        const doctorProfiles = await DoctorProfile.find({ userId: { $in: userIds } });
+        // Map userId to doctorProfile
+        const doctorProfileMap = {};
+        doctorProfiles.forEach(profile => {
+            doctorProfileMap[profile.userId.toString()] = profile;
+        });
+
         res.status(200).json({
             message: 'All blood requests retrieved successfully',
             bloodRequests: requests.map(request => ({
@@ -156,6 +166,7 @@ const getAllBloodRequests = async (req, res) => {
                 status: request.status,
                 confirmationStatus: request.confirmationStatus,
                 user: request.user,
+                doctorProfile: request.user? doctorProfileMap[request.user._id.toString()] : null,
                 createdAt: request.createdAt,
                 updatedAt: request.updatedAt
             })),
