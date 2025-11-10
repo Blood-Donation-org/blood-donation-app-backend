@@ -1,5 +1,6 @@
 const Camp = require('../schemas/CampSchema');
 const CampRegistration = require('../schemas/CampRegistrationSchema');
+const Notification = require('../schemas/NotificationSchema');
 
 // Register a user for a camp
 const registerForACamp = async (req, res) => {
@@ -30,8 +31,16 @@ const registerForACamp = async (req, res) => {
         const nextDonationDate = new Date(campDate);
         nextDonationDate.setMonth(nextDonationDate.getMonth() + 4);
 
+        // Create immediate registration confirmation notification
+        const registrationNotification = new Notification({
+            user: userId,
+            type: 'camp_registration',
+            message: `You have successfully registered for the blood donation camp: ${camp.campName}`,
+            status: 'unread'
+        });
+        await registrationNotification.save();
+
         // Create notification for next donation date
-        const Notification = require('../schemas/NotificationSchema');
         const notification = new Notification({
             user: userId,
             type: 'donation_reminder',
