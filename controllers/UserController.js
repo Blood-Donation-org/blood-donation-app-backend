@@ -1,7 +1,20 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const User = require('../schemas/UserSchema');
 const { validationResult } = require('express-validator');
+
+// Email configuration
+const createEmailTransporter = () => {
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        }
+    });
+};
 
 const initializeAdmin = async () => {
     try {
@@ -367,4 +380,160 @@ const changePassword = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
     }
 };
-module.exports = { register, login, initializeAdmin, updateUser, getAllUsers, getByUserRole, getUserById, changePassword };
+
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required', statusCode: 400 });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: 'User with this email does not exist', statusCode: 404 });
+        }
+
+        // Generate reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+        // Set token and expiration (1 hour from now)
+        user.resetPasswordToken = resetTokenHash;
+        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+        await user.save();
+
+        // Create reset URL
+        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+        // Email options
+        const mailOptions = {
+            from: `"LifeLink Blood Donation" <${process.env.EMAIL_USER}>`,
+            to: user.email,
+            subject: 'Password Reset Request - LifeLink',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+                    <div style="background-color: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <h1 style="color: #CD2F2F; margin-bottom: 10px;">LifeLink</h1>
+                            <h2 style="color: #333; margin: 0;">Password Reset Request</h2>
+                        </div>
+                        
+                        <div style="margin-bottom: 30px;">
+                            <p style="color: #555; font-size: 16px; line-height: 1.6;">
+                                Hello <strong>${user.fullName || 'User'}</strong>,
+                            </p>
+                            <p style="color: #555; font-size: 16px; line-height: 1.6;">
+                                We received a request to reset your password for your LifeLink account. 
+                                If you didn't make this request, you can safely ignore this email.
+                            </p>
+                        </div>
+
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${resetUrl}" 
+                               style="display: inline-block; background-color: #CD2F2F; color: white; 
+                                      text-decoration: none; padding: 15px 30px; border-radius: 5px; 
+                                      font-size: 16px; font-weight: bold;">
+                                Reset Your Password
+                            </a>
+                        </div>
+
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                            <p style="color: #888; font-size: 14px; line-height: 1.5;">
+                                <strong>Important:</strong> This link will expire in 1 hour for security purposes.
+                                If you don't reset your password within this time, you'll need to request a new reset link.
+                            </p>
+                            <p style="color: #888; font-size: 14px; line-height: 1.5;">
+                                If the button above doesn't work, you can copy and paste this link into your browser:
+                                <br><a href="${resetUrl}" style="color: #CD2F2F;">${resetUrl}</a>
+                            </p>
+                        </div>
+
+                        <div style="margin-top: 30px; text-align: center;">
+                            <p style="color: #888; font-size: 12px;">
+                                This is an automated message from LifeLink Blood Donation System.
+                                <br>Please do not reply to this email.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        // Send email
+        const transporter = createEmailTransporter();
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({
+            message: 'Password reset link has been sent to your email',
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ message: 'Failed to send reset email. Please try again.', statusCode: 500 });
+    }
+};
+
+const resetPassword = async (req, res) => {
+    try {
+        const { token, password } = req.body;
+
+        if (!token || !password) {
+            return res.status(400).json({ message: 'Token and new password are required', statusCode: 400 });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters long', statusCode: 400 });
+        }
+
+        // Hash the token to compare with stored hash
+        const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        // Find user with matching token and check if token hasn't expired
+        const user = await User.findOne({
+            resetPasswordToken: resetTokenHash,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ 
+                message: 'Password reset token is invalid or has expired', 
+                statusCode: 400 
+            });
+        }
+
+        // Hash the new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Update password and clear reset token fields
+        user.password = hashedPassword;
+        user.confirmPassword = hashedPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        res.status(200).json({
+            message: 'Password has been reset successfully',
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ message: 'Failed to reset password. Please try again.', statusCode: 500 });
+    }
+};
+
+module.exports = { 
+    register, 
+    login, 
+    initializeAdmin, 
+    updateUser, 
+    getAllUsers, 
+    getByUserRole, 
+    getUserById, 
+    changePassword, 
+    forgotPassword, 
+    resetPassword 
+};

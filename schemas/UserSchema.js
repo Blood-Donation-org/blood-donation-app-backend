@@ -13,6 +13,8 @@ const UserSchema = new mongoose.Schema({
     medicalHistory: {type: String, required: false},
     isDoner: {type: Boolean, required: false},
     isPatient: {type: Boolean, required: false},
+    resetPasswordToken: {type: String, required: false},
+    resetPasswordExpires: {type: Date, required: false},
 }, {timestamps: true});
 
 module.exports = mongoose.model('Users', UserSchema);
