@@ -323,17 +323,42 @@ const updateBloodRequestConfirmationStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { confirmationStatus } = req.body;
+        
+        console.log('Updating confirmation status for request:', id);
+        console.log('New confirmation status:', confirmationStatus);
+        console.log('Request body:', req.body);
+        
         if (!confirmationStatus) {
+            console.log('Confirmation status is missing in request body');
             return res.status(400).json({ message: 'Confirmation status is required', statusCode: 400 });
         }
-        const updatedRequest = await BloodRequest.findByIdAndUpdate(id, { confirmationStatus }, { new: true }).populate('user');
+        
+        // Validate confirmation status values
+        const validStatuses = ['unconfirmed', 'confirmed', 'rejected'];
+        if (!validStatuses.includes(confirmationStatus)) {
+            console.log('Invalid confirmation status:', confirmationStatus);
+            return res.status(400).json({ message: 'Invalid confirmation status. Must be: unconfirmed, confirmed, or rejected', statusCode: 400 });
+        }
+        
+        console.log('Finding request with ID:', id);
+        const updatedRequest = await BloodRequest.findByIdAndUpdate(
+            id, 
+            { confirmationStatus }, 
+            { new: true }
+        ).populate('user');
+        
         if (!updatedRequest) {
+            console.log('Blood request not found with ID:', id);
             return res.status(404).json({ message: 'Blood request not found', statusCode: 404 });
         }
+        
+        console.log('Request updated successfully. New confirmation status:', updatedRequest.confirmationStatus);
+        
         res.status(200).json({
             message: 'Confirmation status updated successfully',
             bloodRequest: {
                 id: updatedRequest._id,
+                patientName: updatedRequest.patientName,
                 status: updatedRequest.status,
                 confirmationStatus: updatedRequest.confirmationStatus,
                 user: updatedRequest.user,
@@ -342,6 +367,8 @@ const updateBloodRequestConfirmationStatus = async (req, res) => {
             statusCode: 200
         });
     } catch (error) {
+        console.error('Error updating confirmation status:', error);
+        console.error('Error stack:', error.stack);
         res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
     }
 };
