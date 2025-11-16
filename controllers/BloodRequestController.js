@@ -1,3 +1,7 @@
+const BloodRequest = require('../schemas/BloodRequestSchema');
+const { validationResult } = require('express-validator');
+const Notification = require('../schemas/NotificationSchema');
+
 // Get all blood requests by user
 const getAllBloodRequestsByUser = async (req, res) => {
     try {
@@ -36,15 +40,15 @@ const getAllBloodRequestsByUser = async (req, res) => {
     }
 };
 
-const BloodRequest = require('../schemas/BloodRequestSchema');
-const { validationResult } = require('express-validator');
-const Notification = require('../schemas/NotificationSchema');
-
 // Create a new blood request
 const createBloodRequest = async (req, res) => {
     try {
+        console.log('Received blood request data:', req.body);
+        console.log('Received file:', req.file);
+        
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            console.log('Validation errors:', errors.array());
             return res.status(400).json({ errors: errors.array(), statusCode: 400 });
         }
         const {
@@ -129,6 +133,8 @@ const createBloodRequest = async (req, res) => {
             statusCode: 201
         });
     } catch (error) {
+        console.error('Error creating blood request:', error);
+        console.error('Stack trace:', error.stack);
         res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
     }
 };
