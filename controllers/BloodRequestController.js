@@ -99,15 +99,22 @@ const createBloodRequest = async (req, res) => {
         });
         await bloodRequest.save();
         await bloodRequest.populate('user');
-        // Create notification for new blood request
-        const notification = new Notification({
-            user: bloodRequest.user._id,
-            type: 'blood-request',
-            message: `New blood request created for patient ${bloodRequest.patientName}`,
-            relatedRequest: bloodRequest._id,
-            status: 'unread'
-        });
-        await notification.save();
+        
+        // Create notification for admin users when new blood request is created
+        try {
+            const NotificationController = require('./NotificationController');
+            
+            // Create notification for all admin users
+            await NotificationController.createNotificationForAdmins({
+                type: 'blood-request',
+                message: `New blood request: Dr. ${bloodRequest.user.fullName} needs ${bloodRequest.bloodType} blood for patient ${bloodRequest.patientName}`,
+                relatedRequest: bloodRequest._id
+            });
+            
+            console.log('✅ Admin notifications created via NotificationController');
+        } catch (error) {
+            console.error('Error creating admin notifications:', error);
+        }
         res.status(201).json({
             message: 'Blood request created successfully',
             bloodRequest: {
@@ -302,6 +309,25 @@ const updateBloodRequestStatus = async (req, res) => {
         if (!updatedRequest) {
             return res.status(404).json({ message: 'Blood request not found', statusCode: 404 });
         }
+
+        // Create notification for status update (doctor notification)
+        if (status === 'approved' || status === 'rejected' || status === 'not_available') {
+            const statusMessages = {
+                'approved': `Blood request for patient ${updatedRequest.patientName} has been approved`,
+                'rejected': `Blood request for patient ${updatedRequest.patientName} has been rejected`, 
+                'not_available': `Blood not available for patient ${updatedRequest.patientName}`
+            };
+            
+            const notification = new Notification({
+                user: updatedRequest.user._id,
+                type: 'blood-request',
+                message: statusMessages[status],
+                relatedRequest: updatedRequest._id,
+                status: 'unread'
+            });
+            await notification.save();
+        }
+
         res.status(200).json({
             message: 'Status updated successfully',
             bloodRequest: {
@@ -353,6 +379,28 @@ const updateBloodRequestConfirmationStatus = async (req, res) => {
         }
         
         console.log('Request updated successfully. New confirmation status:', updatedRequest.confirmationStatus);
+        
+        // Create notification for admin when confirmation status changes
+        if (confirmationStatus === 'confirmed' || confirmationStatus === 'rejected') {
+            try {
+                const NotificationController = require('./NotificationController');
+                
+                const confirmationMessages = {
+                    'confirmed': `Doctor has confirmed receipt of blood for patient ${updatedRequest.patientName}`,
+                    'rejected': `Doctor has rejected blood delivery for patient ${updatedRequest.patientName}`
+                };
+                
+                await NotificationController.createNotificationForAdmins({
+                    type: 'blood-request',
+                    message: confirmationMessages[confirmationStatus],
+                    relatedRequest: updatedRequest._id
+                });
+                
+                console.log('✅ Admin confirmation notifications created via NotificationController');
+            } catch (error) {
+                console.error('Error creating admin confirmation notifications:', error);
+            }
+        }
         
         res.status(200).json({
             message: 'Confirmation status updated successfully',

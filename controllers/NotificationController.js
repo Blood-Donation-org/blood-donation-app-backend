@@ -201,10 +201,88 @@ const deleteNotification = async (req, res) => {
     }
 };
 
+// Create notification for all admin users
+const createNotificationForAdmins = async ({ type, message, relatedRequest }) => {
+    try {
+        const User = require('../schemas/UserSchema');
+        
+        // Find all admin users
+        let adminUsers = await User.find({ role: 'admin' });
+        
+        // If no admin users exist, try to create one
+        if (adminUsers.length === 0) {
+            console.log('No admin users found, attempting to create default admin...');
+            const UserController = require('./UserController');
+            try {
+                await UserController.initializeAdmin();
+                adminUsers = await User.find({ role: 'admin' });
+            } catch (adminError) {
+                console.log('Admin initialization error:', adminError.message);
+                adminUsers = await User.find({ role: 'admin' });
+            }
+        }
+        
+        if (adminUsers.length > 0) {
+            // Create notifications for all admin users
+            const adminNotifications = adminUsers.map(admin => ({
+                user: admin._id,
+                type: type,
+                message: message,
+                relatedRequest: relatedRequest,
+                status: 'unread'
+            }));
+            
+            const result = await Notification.insertMany(adminNotifications);
+            console.log(`Created ${result.length} admin notifications for type: ${type}`);
+            return { success: true, count: result.length };
+        } else {
+            console.log('No admin users available for notifications');
+            return { success: false, error: 'No admin users found' };
+        }
+    } catch (error) {
+        console.error('Error in createNotificationForAdmins:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+// Get all blood-request type notifications for admin users
+const getAllBloodRequestNotifications = async (req, res) => {
+    try {
+        // Find all blood-request type notifications
+        const bloodRequestNotifications = await Notification.find({ type: 'blood-request' })
+            .populate('user', 'fullName email role')
+            .populate('relatedRequest')
+            .sort({ createdAt: -1 }); // Sort by newest first
+
+        console.log(`Found ${bloodRequestNotifications.length} blood-request notifications`);
+
+        res.status(200).json({
+            message: 'Blood request notifications retrieved successfully',
+            notifications: bloodRequestNotifications.map(n => ({
+                id: n._id,
+                user: n.user,
+                type: n.type,
+                message: n.message,
+                relatedRequest: n.relatedRequest,
+                status: n.status,
+                createdAt: n.createdAt,
+                updatedAt: n.updatedAt
+            })),
+            count: bloodRequestNotifications.length,
+            statusCode: 200
+        });
+    } catch (error) {
+        console.error('Error in getAllBloodRequestNotifications:', error);
+        res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
+    }
+};
+
 module.exports = {
     createNotification,
     getAllNotifications,
     getNotificationsByUser,
     markNotificationAsRead,
-    deleteNotification
+    deleteNotification,
+    createNotificationForAdmins,
+    getAllBloodRequestNotifications
 };

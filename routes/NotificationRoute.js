@@ -5,11 +5,13 @@ const {
     getAllNotifications,
     getNotificationsByUser,
     markNotificationAsRead,
-    deleteNotification
+    deleteNotification,
+    getAllBloodRequestNotifications
 } = require('../controllers/NotificationController');
 
 router.post('/create', createNotification);
 router.get('/get-all', getAllNotifications);
+router.get('/get-blood-requests', getAllBloodRequestNotifications);
 router.get('/get-by-user/:userId', getNotificationsByUser);
 router.patch('/mark-read/:id', markNotificationAsRead);
 router.delete('/delete/:id', deleteNotification);
