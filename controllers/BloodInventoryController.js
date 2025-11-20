@@ -19,61 +19,36 @@ const createBloodInventory = async (req, res) => {
             Notes = ''
         } = req.body;
 
-        // Check if bloodType already exists
-        let bloodInventory = await BloodInventory.findOne({ bloodType });
+        // Always create a new entry with unique bloodPacketId
+        const bloodInventory = new BloodInventory({
+            bloodType,
+            units,
+            donerName,
+            donerphone,
+            donerAge,
+            donationDate,
+            Notes
+        });
 
-        if (bloodInventory) {
-            // If exists, increase units
-            bloodInventory.units += units;
-            await bloodInventory.save();
+        await bloodInventory.save();
 
-            return res.status(200).json({
-                message: 'Blood units updated for existing blood type',
-                bloodInventory: {
-                    id: bloodInventory._id,
-                    bloodType: bloodInventory.bloodType,
-                    units: bloodInventory.units,
-                    donerName: bloodInventory.donerName,
-                    donerphone: bloodInventory.donerphone,
-                    donerAge: bloodInventory.donerAge,
-                    donationDate: bloodInventory.donationDate,
-                    Notes: bloodInventory.Notes,
-                    createdAt: bloodInventory.createdAt,
-                    updatedAt: bloodInventory.updatedAt
-                },
-                statusCode: 200
-            });
-        } else {
-            // If not exists, create new entry
-            bloodInventory = new BloodInventory({
-                bloodType,
-                units,
-                donerName,
-                donerphone,
-                donerAge,
-                donationDate,
-                Notes
-            });
-
-            await bloodInventory.save();
-
-            return res.status(201).json({
-                message: 'Blood inventory entry created successfully',
-                bloodInventory: {
-                    id: bloodInventory._id,
-                    bloodType: bloodInventory.bloodType,
-                    units: bloodInventory.units,
-                    donerName: bloodInventory.donerName,
-                    donerphone: bloodInventory.donerphone,
-                    donerAge: bloodInventory.donerAge,
-                    donationDate: bloodInventory.donationDate,
-                    Notes: bloodInventory.Notes,
-                    createdAt: bloodInventory.createdAt,
-                    updatedAt: bloodInventory.updatedAt
-                },
-                statusCode: 201
-            });
-        }
+        return res.status(201).json({
+            message: 'Blood inventory entry created successfully',
+            bloodInventory: {
+                id: bloodInventory._id,
+                bloodPacketId: bloodInventory.bloodPacketId,
+                bloodType: bloodInventory.bloodType,
+                units: bloodInventory.units,
+                donerName: bloodInventory.donerName,
+                donerphone: bloodInventory.donerphone,
+                donerAge: bloodInventory.donerAge,
+                donationDate: bloodInventory.donationDate,
+                Notes: bloodInventory.Notes,
+                createdAt: bloodInventory.createdAt,
+                updatedAt: bloodInventory.updatedAt
+            },
+            statusCode: 201
+        });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
     }
@@ -104,6 +79,7 @@ const updateBloodInventory = async (req, res) => {
             message: 'Blood inventory entry updated successfully',
             bloodInventory: {
                 id: updatedBloodInventory._id,
+                bloodPacketId: updatedBloodInventory.bloodPacketId,
                 bloodType: updatedBloodInventory.bloodType,
                 units: updatedBloodInventory.units,
                 donerName: updatedBloodInventory.donerName,
@@ -156,6 +132,7 @@ const getBloodInventoryById = async (req, res) => {
             message: 'Blood inventory entry retrieved successfully',
             bloodInventory: {
                 id: bloodInventory._id,
+                bloodPacketId: bloodInventory.bloodPacketId,
                 bloodType: bloodInventory.bloodType,
                 units: bloodInventory.units,
                 donerName: bloodInventory.donerName,
@@ -176,12 +153,13 @@ const getBloodInventoryById = async (req, res) => {
 // Get all blood inventory entries
 const getAllBloodInventory = async (req, res) => {
     try {
-        const bloodInventory = await BloodInventory.find();
+        const bloodInventory = await BloodInventory.find().sort({ createdAt: -1 });
 
         res.status(200).json({
             message: 'Blood inventory entries retrieved successfully',
             bloodInventory: bloodInventory.map(entry => ({
                 id: entry._id,
+                bloodPacketId: entry.bloodPacketId,
                 bloodType: entry.bloodType,
                 units: entry.units,
                 donerName: entry.donerName,
@@ -232,4 +210,86 @@ const issueBlood = async (req, res) => {
     }
 };
 
-module.exports = { createBloodInventory, updateBloodInventory, deleteBloodInventory, getBloodInventoryById, getAllBloodInventory, issueBlood };
+// Search blood inventory by bloodPacketId
+const searchBloodByPacketId = async (req, res) => {
+    try {
+        const { bloodPacketId } = req.params;
+        
+        if (!bloodPacketId) {
+            return res.status(400).json({ message: 'bloodPacketId is required', statusCode: 400 });
+        }
+
+        const bloodInventory = await BloodInventory.findOne({ 
+            bloodPacketId: { $regex: new RegExp(bloodPacketId, 'i') } 
+        });
+
+        if (!bloodInventory) {
+            return res.status(404).json({ 
+                message: 'Blood packet not found with the provided ID', 
+                statusCode: 404 
+            });
+        }
+
+        res.status(200).json({
+            message: 'Blood packet found successfully',
+            bloodInventory: {
+                id: bloodInventory._id,
+                bloodPacketId: bloodInventory.bloodPacketId,
+                bloodType: bloodInventory.bloodType,
+                units: bloodInventory.units,
+                donerName: bloodInventory.donerName,
+                donerphone: bloodInventory.donerphone,
+                donerAge: bloodInventory.donerAge,
+                donationDate: bloodInventory.donationDate,
+                Notes: bloodInventory.Notes,
+                createdAt: bloodInventory.createdAt,
+                updatedAt: bloodInventory.updatedAt
+            },
+            statusCode: 200
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
+    }
+};
+
+// Get aggregated blood inventory (total units per blood type)
+const getBloodStockSummary = async (req, res) => {
+    try {
+        const stockSummary = await BloodInventory.aggregate([
+            {
+                $group: {
+                    _id: '$bloodType',
+                    totalUnits: { $sum: '$units' },
+                    totalPackets: { $count: {} },
+                    latestDonation: { $max: '$donationDate' }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+
+        res.status(200).json({
+            message: 'Blood stock summary retrieved successfully',
+            stockSummary: stockSummary.map(stock => ({
+                bloodType: stock._id,
+                totalUnits: stock.totalUnits,
+                totalPackets: stock.totalPackets,
+                latestDonation: stock.latestDonation
+            })),
+            statusCode: 200
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
+    }
+};
+
+module.exports = { 
+    createBloodInventory, 
+    updateBloodInventory, 
+    deleteBloodInventory, 
+    getBloodInventoryById, 
+    getAllBloodInventory, 
+    issueBlood,
+    searchBloodByPacketId,
+    getBloodStockSummary };

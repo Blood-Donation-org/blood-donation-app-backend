@@ -6,7 +6,6 @@ require('dotenv').config();
 const PORT = process.env.SERVER_PORT;
 const DB_CONNECTION_STRING = process.env.DB_CONNECTION_STRING;
 
-
 const UserRoute = require('./routes/UserRoute');
 const UserController = require('./controllers/UserController');
 const CampRoute = require('./routes/CampRoute');
@@ -16,6 +15,10 @@ const BloodIssueRoute = require('./routes/BloodIssueRoute');
 const DoctorProfileRoute = require('./routes/DoctorProfileRoute');
 const BloodRequestRoute = require('./routes/BloodRequestRoute');
 const NotificationRoute = require('./routes/NotificationRoute');
+const EmailTestRoute = require('./routes/EmailTestRoute');
+
+// Import email scheduler
+const { scheduleEmailReminders } = require('./services/emailScheduler');
 
 const app = express();
 
@@ -41,6 +44,10 @@ mongoose.connect(DB_CONNECTION_STRING)
         } catch (error) {
             console.error("Failed to initialize admin, but continuing startup:", error);
         }
+        
+        // Initialize email scheduler
+        scheduleEmailReminders();
+        
         app.listen(PORT, () => {
             console.log(`API started and running on port ${PORT}`);
         });
@@ -58,6 +65,7 @@ app.use('/api/v1/blood-issues', BloodIssueRoute);
 app.use('/api/v1/doctor-profiles', DoctorProfileRoute);
 app.use('/api/v1/blood-requests', BloodRequestRoute);
 app.use('/api/v1/notifications', NotificationRoute);
+app.use('/api/v1/email-test', EmailTestRoute);
 
 
 

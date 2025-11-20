@@ -1,6 +1,8 @@
 const Camp = require('../schemas/CampSchema');
 const CampRegistration = require('../schemas/CampRegistrationSchema');
 const Notification = require('../schemas/NotificationSchema');
+const User = require('../schemas/UserSchema');
+const { sendRegistrationConfirmation } = require('../services/emailService');
 
 // Register a user for a camp
 const registerForACamp = async (req, res) => {
@@ -9,16 +11,25 @@ const registerForACamp = async (req, res) => {
         if (!userId || !campId) {
             return res.status(400).json({ message: 'userId and campId are required', statusCode: 400 });
         }
-        // Optionally check if camp exists
+        
+        // Check if camp exists
         const camp = await Camp.findById(campId);
         if (!camp) {
             return res.status(404).json({ message: 'Camp not found', statusCode: 404 });
         }
-        // Optionally check if already registered
+        
+        // Get user details for email
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found', statusCode: 404 });
+        }
+        
+        // Check if already registered
         const alreadyRegistered = await CampRegistration.findOne({ userId, campId });
         if (alreadyRegistered) {
             return res.status(409).json({ message: 'User already registered for this camp', statusCode: 409 });
         }
+        
         const registration = new CampRegistration({ userId, campId });
         await registration.save();
 
@@ -51,6 +62,38 @@ const registerForACamp = async (req, res) => {
         });
         await notification.save();
 
+        // Send registration confirmation email
+        try {
+            if (user.email) {
+                const campDetails = {
+                    campName: camp.campName,
+                    date: new Date(camp.date).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    }),
+                    time: camp.time || 'All Day',
+                    place: camp.place
+                };
+                
+                const emailResult = await sendRegistrationConfirmation(
+                    user.email, 
+                    user.name, 
+                    campDetails
+                );
+                
+                if (emailResult.success) {
+                    console.log(`Registration confirmation email sent to ${user.email}`);
+                } else {
+                    console.error(`Failed to send email to ${user.email}:`, emailResult.error);
+                }
+            }
+        } catch (emailError) {
+            console.error('Email sending error:', emailError);
+            // Don't fail the registration if email fails
+        }
+
         res.status(201).json({
             message: 'User registered for camp successfully',
             registration: {
@@ -63,6 +106,7 @@ const registerForACamp = async (req, res) => {
             statusCode: 201
         });
     } catch (error) {
+        console.error('Registration error:', error);
         res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
     }
 };
