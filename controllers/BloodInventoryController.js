@@ -10,6 +10,7 @@ const createBloodInventory = async (req, res) => {
         }
 
         const {
+            bloodPacketId,
             bloodType,
             units,
             donerName,
@@ -21,6 +22,7 @@ const createBloodInventory = async (req, res) => {
 
         // Always create a new entry with unique bloodPacketId
         const bloodInventory = new BloodInventory({
+            bloodPacketId,
             bloodType,
             units,
             donerName,
