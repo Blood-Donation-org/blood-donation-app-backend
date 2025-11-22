@@ -60,11 +60,8 @@ const getNotificationsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
         
-        console.log('Getting notifications for user ID:', userId);
-        
         // Validate userId parameter
         if (!userId) {
-            console.log('No userId provided');
             return res.status(400).json({ 
                 message: 'User ID is required', 
                 statusCode: 400 
@@ -74,7 +71,6 @@ const getNotificationsByUser = async (req, res) => {
         // Validate that userId is a valid MongoDB ObjectId
         const mongoose = require('mongoose');
         if (!mongoose.Types.ObjectId.isValid(userId)) {
-            console.log('Invalid user ID format:', userId);
             return res.status(400).json({ 
                 message: 'Invalid user ID format', 
                 statusCode: 400 
@@ -87,18 +83,9 @@ const getNotificationsByUser = async (req, res) => {
             .populate('relatedRequest')
             .sort({ createdAt: -1 }); // Sort by newest first
 
-        console.log(`Found ${notifications.length} notifications for user ${userId}`);
-        console.log('Notifications:', notifications.map(n => ({ 
-            id: n._id, 
-            type: n.type, 
-            message: n.message,
-            belongsToUser: n.user?._id?.toString() === userId 
-        })));
-
         // Double-check security: ensure all notifications belong to the requested user
         const securityCheck = notifications.every(n => n.user && n.user._id.toString() === userId);
         if (!securityCheck) {
-            console.error('🚨 SECURITY VIOLATION: Found notifications that do not belong to requested user!');
             return res.status(403).json({ 
                 message: 'Unauthorized access to notifications', 
                 statusCode: 403 
@@ -121,7 +108,6 @@ const getNotificationsByUser = async (req, res) => {
             statusCode: 200
         });
     } catch (error) {
-        console.error('Error in getNotificationsByUser:', error);
         res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
     }
 };
@@ -211,13 +197,11 @@ const createNotificationForAdmins = async ({ type, message, relatedRequest }) =>
         
         // If no admin users exist, try to create one
         if (adminUsers.length === 0) {
-            console.log('No admin users found, attempting to create default admin...');
             const UserController = require('./UserController');
             try {
                 await UserController.initializeAdmin();
                 adminUsers = await User.find({ role: 'admin' });
             } catch (adminError) {
-                console.log('Admin initialization error:', adminError.message);
                 adminUsers = await User.find({ role: 'admin' });
             }
         }
@@ -233,14 +217,11 @@ const createNotificationForAdmins = async ({ type, message, relatedRequest }) =>
             }));
             
             const result = await Notification.insertMany(adminNotifications);
-            console.log(`Created ${result.length} admin notifications for type: ${type}`);
             return { success: true, count: result.length };
         } else {
-            console.log('No admin users available for notifications');
             return { success: false, error: 'No admin users found' };
         }
     } catch (error) {
-        console.error('Error in createNotificationForAdmins:', error);
         return { success: false, error: error.message };
     }
 };
@@ -253,8 +234,6 @@ const getAllBloodRequestNotifications = async (req, res) => {
             .populate('user', 'fullName email role')
             .populate('relatedRequest')
             .sort({ createdAt: -1 }); // Sort by newest first
-
-        console.log(`Found ${bloodRequestNotifications.length} blood-request notifications`);
 
         res.status(200).json({
             message: 'Blood request notifications retrieved successfully',
@@ -272,7 +251,6 @@ const getAllBloodRequestNotifications = async (req, res) => {
             statusCode: 200
         });
     } catch (error) {
-        console.error('Error in getAllBloodRequestNotifications:', error);
         res.status(500).json({ message: 'Server error', error: error.message, statusCode: 500 });
     }
 };
