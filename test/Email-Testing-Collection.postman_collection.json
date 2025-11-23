@@ -1,0 +1,294 @@
+{
+  "info": {
+    "name": "Blood Donation App - Email Testing",
+    "description": "Comprehensive test collection for all email functionalities in the Blood Donation App",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "testEmail",
+      "value": "your-test-email@example.com",
+      "type": "string"
+    },
+    {
+      "key": "testUserName",
+      "value": "John Doe",
+      "type": "string"
+    },
+    {
+      "key": "campId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Configuration Tests",
+      "item": [
+        {
+          "name": "Test Email Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-test/test-email-config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "email-test", "test-email-config"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Camps",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-test/available-camps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "email-test", "available-camps"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Extract first camp ID for use in other tests",
+                  "const response = pm.response.json();",
+                  "if (response.camps && response.camps.length > 0) {",
+                  "    pm.collectionVariables.set('campId', response.camps[0].id);",
+                  "    console.log('Set campId to:', response.camps[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Individual Email Tests",
+      "item": [
+        {
+          "name": "Test Registration Confirmation Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"userName\": \"{{testUserName}}\",\n  \"campId\": \"{{campId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-test/test-registration-confirmation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "email-test", "test-registration-confirmation"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Week Reminder Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"userName\": \"{{testUserName}}\",\n  \"campId\": \"{{campId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-test/test-week-reminder",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "email-test", "test-week-reminder"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Next Donation Reminder Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"userName\": \"{{testUserName}}\",\n  \"nextDonationDate\": \"2026-04-23\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-test/test-next-donation-reminder",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "email-test", "test-next-donation-reminder"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Custom Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"subject\": \"🧪 Custom Email Test from Postman\",\n  \"htmlContent\": \"<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'><h2 style='color: #CD2F2F;'>🧪 Custom Email Test</h2><p>Dear User,</p><p>This is a test email sent from Postman to verify custom email functionality.</p><div style='background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin: 20px 0;'><p><strong>Test Details:</strong></p><ul><li>Sent from: Postman Collection</li><li>Test time: {{$timestamp}}</li><li>Service: Gmail via Nodemailer</li></ul></div><p>If you received this, the email service is working! ✅</p><p>Best regards,<br>Blood Donation App Team</p></div>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-test/test-custom-email",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "email-test", "test-custom-email"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Comprehensive Tests",
+      "item": [
+        {
+          "name": "Test All Email Types",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"userName\": \"{{testUserName}}\",\n  \"campId\": \"{{campId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-test/test-all-emails",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "email-test", "test-all-emails"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Scheduled Email Tests",
+      "item": [
+        {
+          "name": "Send Week Reminders Now",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-test/send-week-reminders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "email-test", "send-week-reminders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Next Donation Reminders Now",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-test/send-next-donation-reminders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "email-test", "send-next-donation-reminders"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Camp Management for Testing",
+      "item": [
+        {
+          "name": "Get All Camps",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/camps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "camps"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Test Camp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"campName\": \"Email Test Blood Drive\",\n  \"date\": \"2024-12-25\",\n  \"time\": \"9:00 AM - 5:00 PM\",\n  \"place\": \"Test Community Center, 123 Test Street\",\n  \"description\": \"This is a test camp for email functionality testing\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/camps/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "camps", "create"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Set the created camp ID for use in email tests",
+                  "const response = pm.response.json();",
+                  "if (response.camp && response.camp.id) {",
+                  "    pm.collectionVariables.set('campId', response.camp.id);",
+                  "    console.log('Created test camp with ID:', response.camp.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Set dynamic timestamp for requests",
+          "pm.globals.set('timestamp', new Date().toISOString());"
+        ]
+      }
+    }
+  ]
+}

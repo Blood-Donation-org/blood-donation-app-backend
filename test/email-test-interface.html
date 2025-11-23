@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Donation App - Email Testing Interface</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #CD2F2F;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #CD2F2F;
+            border-bottom: 2px solid #CD2F2F;
+            padding-bottom: 10px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        input, select, textarea, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button {
+            background-color: #CD2F2F;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background-color: #a52525;
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result-area {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            min-height: 100px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        
+        .info {
+            background-color: #e2e8f0;
+            border-color: #cbd5e0;
+            color: #2d3748;
+        }
+        
+        .loading {
+            color: #007bff;
+        }
+        
+        .config-status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🩸 Blood Donation App - Email Testing Interface</h1>
+        
+        <div id="configStatus" class="config-status"></div>
+        
+        <div class="test-section">
+            <h2>📧 Email Configuration</h2>
+            <button onclick="checkEmailConfig()">Check Email Configuration</button>
+            <div id="configResult" class="result-area"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🏥 Test Setup</h2>
+            <div class="two-column">
+                <div>
+                    <div class="form-group">
+                        <label for="testEmail">Test Email Address:</label>
+                        <input type="email" id="testEmail" placeholder="your-email@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="testUserName">Test User Name:</label>
+                        <input type="text" id="testUserName" value="John Doe" required>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label for="campSelect">Select Camp for Testing:</label>
+                        <select id="campSelect">
+                            <option value="">Loading camps...</option>
+                        </select>
+                        <button onclick="loadCamps()">Refresh Camps</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🧪 Individual Email Tests</h2>
+            <div class="two-column">
+                <div>
+                    <h3>Registration Confirmation Email</h3>
+                    <button onclick="testRegistrationEmail()">Send Test Email</button>
+                    <div id="registrationResult" class="result-area"></div>
+                </div>
+                <div>
+                    <h3>Week Reminder Email</h3>
+                    <button onclick="testWeekReminderEmail()">Send Test Email</button>
+                    <div id="weekReminderResult" class="result-area"></div>
+                </div>
+            </div>
+            
+            <div class="two-column">
+                <div>
+                    <h3>Next Donation Reminder Email</h3>
+                    <div class="form-group">
+                        <label for="nextDonationDate">Next Donation Date (optional):</label>
+                        <input type="date" id="nextDonationDate">
+                    </div>
+                    <button onclick="testNextDonationEmail()">Send Test Email</button>
+                    <div id="nextDonationResult" class="result-area"></div>
+                </div>
+                <div>
+                    <h3>Custom Email</h3>
+                    <div class="form-group">
+                        <label for="customSubject">Subject:</label>
+                        <input type="text" id="customSubject" value="🧪 Custom Email Test">
+                    </div>
+                    <div class="form-group">
+                        <label for="customContent">HTML Content:</label>
+                        <textarea id="customContent" rows="4" placeholder="Enter HTML content..."></textarea>
+                    </div>
+                    <button onclick="testCustomEmail()">Send Test Email</button>
+                    <div id="customResult" class="result-area"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🚀 Comprehensive Tests</h2>
+            <button onclick="testAllEmails()" style="background-color: #28a745;">Test All Email Types</button>
+            <div id="allEmailsResult" class="result-area"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>⏰ Scheduled Email Tests</h2>
+            <div class="two-column">
+                <div>
+                    <h3>Week Reminders (Scheduler)</h3>
+                    <p>Send week reminders to users registered for camps happening in 7 days</p>
+                    <button onclick="triggerWeekReminders()">Trigger Week Reminders</button>
+                    <div id="weekRemindersResult" class="result-area"></div>
+                </div>
+                <div>
+                    <h3>Next Donation Reminders (Scheduler)</h3>
+                    <p>Send next donation reminders for camps that happened yesterday</p>
+                    <button onclick="triggerNextDonationReminders()">Trigger Next Donation Reminders</button>
+                    <div id="nextDonationRemindersResult" class="result-area"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api/v1';
+        
+        // Utility functions
+        function updateResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result-area ${type}`;
+        }
+        
+        function setLoading(elementId, isLoading = true) {
+            const button = document.querySelector(`button[onclick*="${elementId}"]`);
+            if (button) {
+                button.disabled = isLoading;
+                button.textContent = isLoading ? 'Loading...' : button.textContent;
+            }
+        }
+        
+        async function makeRequest(endpoint, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                return await response.json();
+            } catch (error) {
+                throw new Error(`Network error: ${error.message}`);
+            }
+        }
+        
+        // Configuration check
+        async function checkEmailConfig() {
+            updateResult('configResult', 'Checking email configuration...', 'loading');
+            
+            try {
+                const result = await makeRequest('/email-test/test-email-config');
+                
+                if (result.isFullyConfigured) {
+                    updateResult('configResult', `✅ Email configuration is complete!\n\n${JSON.stringify(result.config, null, 2)}`, 'success');
+                    document.getElementById('configStatus').innerHTML = '✅ Email service is properly configured';
+                    document.getElementById('configStatus').className = 'config-status success';
+                } else {
+                    updateResult('configResult', `⚠️ Email configuration issues:\n\n${result.recommendations.join('\n')}`, 'warning');
+                    document.getElementById('configStatus').innerHTML = '⚠️ Email service configuration needs attention';
+                    document.getElementById('configStatus').className = 'config-status warning';
+                }
+            } catch (error) {
+                updateResult('configResult', `❌ Error checking configuration: ${error.message}`, 'error');
+                document.getElementById('configStatus').innerHTML = '❌ Unable to check email configuration';
+                document.getElementById('configStatus').className = 'config-status error';
+            }
+        }
+        
+        // Load camps
+        async function loadCamps() {
+            try {
+                const result = await makeRequest('/email-test/available-camps');
+                const select = document.getElementById('campSelect');
+                select.innerHTML = '<option value="">Select a camp...</option>';
+                
+                result.camps.forEach(camp => {
+                    const option = document.createElement('option');
+                    option.value = camp.id;
+                    option.textContent = `${camp.campName} - ${camp.formattedDate}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                document.getElementById('campSelect').innerHTML = '<option value="">Error loading camps</option>';
+            }
+        }
+        
+        // Get form data
+        function getTestData() {
+            return {
+                email: document.getElementById('testEmail').value,
+                userName: document.getElementById('testUserName').value,
+                campId: document.getElementById('campSelect').value
+            };
+        }
+        
+        // Validate form data
+        function validateTestData(data, requireCamp = true) {
+            if (!data.email || !data.userName) {
+                throw new Error('Please fill in email and user name');
+            }
+            if (requireCamp && !data.campId) {
+                throw new Error('Please select a camp');
+            }
+        }
+        
+        // Test registration email
+        async function testRegistrationEmail() {
+            updateResult('registrationResult', 'Sending registration confirmation email...', 'loading');
+            
+            try {
+                const data = getTestData();
+                validateTestData(data);
+                
+                const result = await makeRequest('/email-test/test-registration-confirmation', 'POST', data);
+                
+                if (result.result.success) {
+                    updateResult('registrationResult', `✅ Registration confirmation email sent successfully!\n\nMessage ID: ${result.result.messageId}\nCamp: ${result.campDetails.campName}`, 'success');
+                } else {
+                    updateResult('registrationResult', `❌ Failed to send email: ${result.result.error}`, 'error');
+                }
+            } catch (error) {
+                updateResult('registrationResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test week reminder email
+        async function testWeekReminderEmail() {
+            updateResult('weekReminderResult', 'Sending week reminder email...', 'loading');
+            
+            try {
+                const data = getTestData();
+                validateTestData(data);
+                
+                const result = await makeRequest('/email-test/test-week-reminder', 'POST', data);
+                
+                if (result.result.success) {
+                    updateResult('weekReminderResult', `✅ Week reminder email sent successfully!\n\nMessage ID: ${result.result.messageId}\nCamp: ${result.campDetails.campName}`, 'success');
+                } else {
+                    updateResult('weekReminderResult', `❌ Failed to send email: ${result.result.error}`, 'error');
+                }
+            } catch (error) {
+                updateResult('weekReminderResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test next donation email
+        async function testNextDonationEmail() {
+            updateResult('nextDonationResult', 'Sending next donation reminder email...', 'loading');
+            
+            try {
+                const data = getTestData();
+                validateTestData(data, false);
+                
+                const nextDonationDate = document.getElementById('nextDonationDate').value;
+                if (nextDonationDate) {
+                    data.nextDonationDate = nextDonationDate;
+                }
+                
+                const result = await makeRequest('/email-test/test-next-donation-reminder', 'POST', data);
+                
+                if (result.result.success) {
+                    updateResult('nextDonationResult', `✅ Next donation reminder email sent successfully!\n\nMessage ID: ${result.result.messageId}\nNext donation date: ${result.nextDonationDate}`, 'success');
+                } else {
+                    updateResult('nextDonationResult', `❌ Failed to send email: ${result.result.error}`, 'error');
+                }
+            } catch (error) {
+                updateResult('nextDonationResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test custom email
+        async function testCustomEmail() {
+            updateResult('customResult', 'Sending custom email...', 'loading');
+            
+            try {
+                const data = getTestData();
+                validateTestData(data, false);
+                
+                data.subject = document.getElementById('customSubject').value;
+                data.htmlContent = document.getElementById('customContent').value || 
+                    `<div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; padding: 20px;">
+                        <h2 style="color: #CD2F2F;">🧪 Custom Email Test</h2>
+                        <p>Dear ${data.userName},</p>
+                        <p>This is a test email sent from the web testing interface.</p>
+                        <p>If you received this, the custom email functionality is working correctly! ✅</p>
+                        <p>Best regards,<br>Blood Donation App Team</p>
+                    </div>`;
+                
+                const result = await makeRequest('/email-test/test-custom-email', 'POST', data);
+                
+                if (result.result.success) {
+                    updateResult('customResult', `✅ Custom email sent successfully!\n\nMessage ID: ${result.result.messageId}\nSubject: ${data.subject}`, 'success');
+                } else {
+                    updateResult('customResult', `❌ Failed to send email: ${result.result.error}`, 'error');
+                }
+            } catch (error) {
+                updateResult('customResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test all emails
+        async function testAllEmails() {
+            updateResult('allEmailsResult', 'Running comprehensive email tests...', 'loading');
+            
+            try {
+                const data = getTestData();
+                validateTestData(data);
+                
+                const result = await makeRequest('/email-test/test-all-emails', 'POST', data);
+                
+                let resultText = `📊 Email Test Summary:\n\n`;
+                resultText += `Total Tests: ${result.summary.total}\n`;
+                resultText += `Successful: ${result.summary.successful}\n`;
+                resultText += `Failed: ${result.summary.failed}\n\n`;
+                resultText += `Detailed Results:\n`;
+                
+                Object.entries(result.results).forEach(([testName, testResult]) => {
+                    const status = testResult.success ? '✅' : '❌';
+                    resultText += `${status} ${testName}: ${testResult.success ? 'SUCCESS' : 'FAILED'}\n`;
+                    if (!testResult.success) {
+                        resultText += `   Error: ${testResult.error}\n`;
+                    }
+                });
+                
+                const resultType = result.summary.failed === 0 ? 'success' : 'warning';
+                updateResult('allEmailsResult', resultText, resultType);
+            } catch (error) {
+                updateResult('allEmailsResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Trigger scheduled week reminders
+        async function triggerWeekReminders() {
+            updateResult('weekRemindersResult', 'Triggering week reminders...', 'loading');
+            
+            try {
+                const result = await makeRequest('/email-test/send-week-reminders', 'POST');
+                updateResult('weekRemindersResult', `Week reminders process completed:\n\n${JSON.stringify(result.result, null, 2)}`, result.result.success ? 'success' : 'warning');
+            } catch (error) {
+                updateResult('weekRemindersResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Trigger scheduled next donation reminders
+        async function triggerNextDonationReminders() {
+            updateResult('nextDonationRemindersResult', 'Triggering next donation reminders...', 'loading');
+            
+            try {
+                const result = await makeRequest('/email-test/send-next-donation-reminders', 'POST');
+                updateResult('nextDonationRemindersResult', `Next donation reminders process completed:\n\n${JSON.stringify(result.result, null, 2)}`, result.result.success ? 'success' : 'warning');
+            } catch (error) {
+                updateResult('nextDonationRemindersResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize the page
+        window.addEventListener('DOMContentLoaded', function() {
+            // Check email configuration on load
+            checkEmailConfig();
+            
+            // Load available camps
+            loadCamps();
+            
+            // Set a default test email if needed
+            const emailInput = document.getElementById('testEmail');
+            if (!emailInput.value) {
+                emailInput.placeholder = 'Enter your email address for testing';
+            }
+        });
+    </script>
+</body>
+</html>
