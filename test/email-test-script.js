@@ -23,8 +23,7 @@ const TEST_CONFIG = {
         date: 'Friday, December 1, 2025',
         time: '9:00 AM - 5:00 PM',
         place: 'Community Center, 123 Main Street'
-    },
-    nextDonationDate: 'Monday, April 23, 2026'
+    }
 };
 
 // ANSI color codes for better console output
@@ -138,16 +137,30 @@ const testWeekReminder = async () => {
 // Test next donation reminder email
 const testNextDonationReminder = async () => {
     logHeader('NEXT DONATION REMINDER EMAIL TEST');
-    
+
     try {
         logInfo(`Sending next donation reminder to: ${TEST_CONFIG.testEmail}`);
-        
+
+        // Calculate next donation date: camp registration date + 6 months
+        // Parse the camp date string (e.g., 'Friday, December 1, 2025')
+        const campDateStr = TEST_CONFIG.sampleCampDetails.date;
+        const campDate = new Date(campDateStr.replace(/^[^,]*, /, ''));
+        if (isNaN(campDate.getTime())) {
+            logError('Could not parse camp date for next donation calculation.');
+            return false;
+        }
+        const nextDonationDateObj = new Date(campDate);
+        nextDonationDateObj.setMonth(nextDonationDateObj.getMonth() + 6);
+        // Format as e.g., 'Monday, June 1, 2026'
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const nextDonationDate = nextDonationDateObj.toLocaleDateString('en-US', options);
+
         const result = await sendNextDonationReminder(
             TEST_CONFIG.testEmail,
             TEST_CONFIG.testUserName,
-            TEST_CONFIG.nextDonationDate
+            nextDonationDate
         );
-        
+
         if (result.success) {
             logSuccess('Next donation reminder email sent successfully');
             logInfo(`Message ID: ${result.messageId}`);
