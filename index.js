@@ -37,6 +37,17 @@ app.use((req, res, next) => {
     next();
 });
 
+// Setup routes BEFORE database connection
+app.use('/api/v1/users', UserRoute);
+app.use('/api/v1/camps', CampRoute);
+app.use('/api/v1/blood-inventory', BloodInventoryRoute);
+app.use('/api/v1/camp-registrations', CampRegistrationRoute);
+app.use('/api/v1/blood-issues', BloodIssueRoute);
+app.use('/api/v1/doctor-profiles', DoctorProfileRoute);
+app.use('/api/v1/blood-requests', BloodRequestRoute);
+app.use('/api/v1/notifications', NotificationRoute);
+app.use('/api/v1/email-test', EmailTestRoute);
+
 mongoose.connect(DB_CONNECTION_STRING)
     .then(async () => {
         try {
@@ -55,18 +66,5 @@ mongoose.connect(DB_CONNECTION_STRING)
     .catch(error => {
         console.error("Failed to connect to MongoDB:", error);
     });
-
-
-app.use('/api/v1/users', UserRoute);
-app.use('/api/v1/camps', CampRoute);
-app.use('/api/v1/blood-inventory', BloodInventoryRoute);
-app.use('/api/v1/camp-registrations', CampRegistrationRoute);
-app.use('/api/v1/blood-issues', BloodIssueRoute);
-app.use('/api/v1/doctor-profiles', DoctorProfileRoute);
-app.use('/api/v1/blood-requests', BloodRequestRoute);
-app.use('/api/v1/notifications', NotificationRoute);
-app.use('/api/v1/email-test', EmailTestRoute);
-
-
 
 module.exports = app;
